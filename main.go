@@ -6,6 +6,7 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
+	// Undefined paths no longer get routed to /
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -18,6 +19,13 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
+	// Use r.Method to check whether the request is using POST or not
+	if r.Method != "POST" {
+		// Send 405 response if it isn't a POST
+		w.WriteHeader(405)
+		w.Write([]byte("Method not allowed"))
+		return
+	}
 	w.Write([]byte("Create a new snippet..."))
 }
 
