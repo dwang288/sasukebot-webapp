@@ -20,10 +20,13 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Use r.Method to check whether the request is using POST or not
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		// Send 405 response if it isn't a POST
-		w.WriteHeader(405)
-		w.Write([]byte("Method not allowed"))
+		// Also let client know which REST methods are allowed by adding a header to
+		// the response header map
+		w.Header().Set("Allow", http.MethodPost)
+		// Use provided Error function to return the correct error code and message
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	w.Write([]byte("Create a new snippet..."))
