@@ -1,11 +1,20 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 )
 
 func main() {
+
+	// Define a command line flag with the name addr and a default value
+	addr := flag.String("addr", ":4000", "HTTP network address")
+
+	// Parse value stored in flag and assign to addr. Without parsing, addr will always
+	// be set to the default value. Will panic if errors occur during parsing
+	flag.Parse()
+
 	// Create a file server for serving static files out of a directory
 	// Path given is relative to the project directory root
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
@@ -22,8 +31,8 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	// Use the http.ListenAndServe() function to start a new web server
-	// Pass in the port and the servemux
-	log.Print("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
+	// Dereference the flag value and pass in the addr and the servemux
+	log.Printf("Starting server on %s", *addr)
+	err := http.ListenAndServe(*addr, mux)
 	log.Fatal(err)
 }
