@@ -17,8 +17,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 	// Template path slice. Base template must be first in the slice.
 	files := []string{
-		"./ui/html/base.tmpl",
-		"./ui/html/pages/home.tmpl",
+		"./ui/html/base.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+		"./ui/html/pages/home.tmpl.html",
 	}
 
 	// Read template file into a template set.
@@ -31,7 +32,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
-	// Write the template content into response body
+	// Write the specified template in the set into response body
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Print(err.Error())
