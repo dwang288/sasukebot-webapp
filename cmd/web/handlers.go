@@ -15,17 +15,24 @@ func home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Template path slice. Base template must be first in the slice.
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/pages/home.tmpl",
+	}
+
 	// Read template file into a template set.
 	// If error is present, log error msg and return a generic 500
 	// Path either needs to be an absolute path or relative to your current working diretory
-	ts, err := template.ParseFiles("./ui/html/pages/home.tmpl.html")
+	// Passing in template file path slice as variadic parameter
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
 	// Write the template content into response body
-	err = ts.Execute(w, nil)
+	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal Server Error", 500)
