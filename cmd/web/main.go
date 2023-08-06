@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -14,6 +15,15 @@ func main() {
 	// Parse value stored in flag and assign to addr. Without parsing, addr will always
 	// be set to the default value. Will panic if errors occur during parsing
 	flag.Parse()
+
+	// New INFO level logger with output destination, message string prefix, and flags
+	// to indicate the additional information to include (local date and time) joined with |
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+
+	// New ERROR level logger with all the INFO level logger information + filename/line number
+	// of error logged and logged to stderr
+
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// Create a file server for serving static files out of a directory
 	// Path given is relative to the project directory root
@@ -30,9 +40,16 @@ func main() {
 	// Strip /static prefix from URL path before processing request
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	// Use the http.ListenAndServe() function to start a new web server
-	// Dereference the flag value and pass in the addr and the servemux
-	log.Printf("Starting server on %s", *addr)
-	err := http.ListenAndServe(*addr, mux)
-	log.Fatal(err)
+	// Specify and initialize a http.Server so we can use our custom errorLog.
+	// Otherwise we could just use the http.ListenAndServe shortcut function.
+	srv := &http.Server{
+		Addr:     *addr,
+		ErrorLog: errorLog,
+		Handler:  mux,
+	}
+	// Use the ListenAndServe() function on our custom http.Server
+	// to start a new web server.
+	infoLog.Printf("Starting server on %s", *addr)
+	err := srv.ListenAndServe()
+	errorLog.Fatal(err)
 }
