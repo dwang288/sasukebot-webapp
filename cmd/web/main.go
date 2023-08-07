@@ -7,7 +7,10 @@ import (
 	"net/http"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql" // Adding this so go mod tidy doesn't remove the package
+	// Adding this so 1) go mod tidy doesn't remove the package and
+	// 2) the init() function of the package runs and registers itself with the
+	// database/sql package. This is standard procedure with most the go sql drivers.
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
@@ -63,11 +66,13 @@ func main() {
 
 // openDB wraps sql.Open() and return a sql.DB connection pool
 func openDB(dsn string) (*sql.DB, error) {
+	// sql.Open initializes the pool and estabilshes it for future use, but does
+	// not actually open any connections. DB connections are opened lazily when needed.
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
-	// Check that it connected and the DB is pingable
+	// Opens an actual connection to the DB to check that we can connect
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
