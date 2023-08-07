@@ -10,7 +10,8 @@ import (
 // along with the error code to the response
 func (app *application) serverError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	app.errorLog.Print(trace)
+	// Change frame depth to 2 so we see who called this helper
+	app.errorLog.Output(2, trace)
 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
