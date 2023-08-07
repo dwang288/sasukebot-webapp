@@ -10,7 +10,8 @@ import (
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Undefined paths no longer get routed to /
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		// Use the notFound() helper
+		app.notFound(w)
 		return
 	}
 
@@ -27,15 +28,13 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Passing in template file path slice as variadic parameter
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err) // Use the serverError() handler
 		return
 	}
 	// Write the specified template in the set into response body
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.errorLog.Print(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		app.serverError(w, err) // Use the serverError() handler
 		return
 	}
 }
@@ -46,7 +45,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	// If it cannot be converted or is out of the expected range then return 404
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w) // Use the notFound() helper
 		return
 	}
 
@@ -61,8 +60,8 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		// Also let client know which REST methods are allowed by adding a header to
 		// the response header map
 		w.Header().Set("Allow", http.MethodPost)
-		// Use provided Error function to return the correct error code and message
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		// Return the correct error code and message
+		app.clientError(w, http.StatusMethodNotAllowed) // use the clientError() helper
 		return
 	}
 	w.Write([]byte("Create a new snippet..."))
