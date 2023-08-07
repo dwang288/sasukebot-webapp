@@ -1,10 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql" // Adding this so go mod tidy doesn't remove the package
 )
 
 type application struct {
@@ -16,6 +19,8 @@ func main() {
 
 	// Define a command line flag with the name addr and a default value
 	addr := flag.String("addr", ":4000", "HTTP network address")
+	// Flag for the mySQL DSN string
+	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	// Parse value stored in flag and assign to addr. Without parsing, addr will always
 	// be set to the default value. Will panic if errors occur during parsing
@@ -27,8 +32,14 @@ func main() {
 
 	// New ERROR level logger with all the INFO level logger information + filename/line number
 	// of error logged and logged to stderr
-
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// Open a db based on the passed in dsn string, defer pool close
+	db, err := openDB(*dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+	defer db.Close()
 
 	// Initialize new application struct with dependencies
 	app := &application{
@@ -46,6 +57,19 @@ func main() {
 	// Use the ListenAndServe() function on our custom http.Server
 	// to start a new web server.
 	infoLog.Printf("Starting server on %s", *addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
+}
+
+// openDB wraps sql.Open() and return a sql.DB connection pool
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	// Check that it connected and the DB is pingable
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }
