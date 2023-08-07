@@ -36,27 +36,12 @@ func main() {
 		infoLog:  infoLog,
 	}
 
-	// Create a file server for serving static files out of a directory
-	// Path given is relative to the project directory root
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-
-	// Use the http.NewServeMux() function to initialize a new servemux
-	// Register the home function as the handler for the "/" URL pattern
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-
-	// Register FileServer as the handler for URL paths that start with /static/
-	// Strip /static prefix from URL path before processing request
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
 	// Specify and initialize a http.Server so we can use our custom errorLog.
 	// Otherwise we could just use the http.ListenAndServe shortcut function.
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  mux,
+		Handler:  app.routes(),
 	}
 	// Use the ListenAndServe() function on our custom http.Server
 	// to start a new web server.
