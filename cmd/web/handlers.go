@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
 
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Undefined paths no longer get routed to /
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -28,19 +27,20 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// Passing in template file path slice as variadic parameter
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Print(err.Error())
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
 	// Write the specified template in the set into response body
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Print(err.Error())
 		http.Error(w, "Internal Server Error", 500)
+		return
 	}
 }
 
-func snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// Extract the id parameter from the query and turn the string into and int
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
@@ -54,7 +54,7 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }
 
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Use r.Method to check whether the request is using POST or not
 	if r.Method != http.MethodPost {
 		// Send 405 response if it isn't a POST

@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 func main() {
 
 	// Define a command line flag with the name addr and a default value
@@ -25,6 +30,12 @@ func main() {
 
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// Initialize new application struct with dependencies
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+	}
+
 	// Create a file server for serving static files out of a directory
 	// Path given is relative to the project directory root
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
@@ -32,9 +43,9 @@ func main() {
 	// Use the http.NewServeMux() function to initialize a new servemux
 	// Register the home function as the handler for the "/" URL pattern
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view", app.snippetView)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	// Register FileServer as the handler for URL paths that start with /static/
 	// Strip /static prefix from URL path before processing request
