@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
+
+	// Temporarily return just the plain text Latest value for this commit
+	// "html/template"
 	"net/http"
 	"strconv"
 
@@ -18,28 +20,39 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Template path slice. Base template must be first in the slice.
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
+	// Temporarily display snippets
+	snippets, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
+		return
 	}
 
-	// Read template file into a template set.
-	// If error is present, log error msg and return a generic 500
-	// Path either needs to be an absolute path or relative to your current working diretory
-	// Passing in template file path slice as variadic parameter
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err) // Use the serverError() handler
-		return
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
 	}
-	// Write the specified template in the set into response body
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		app.serverError(w, err) // Use the serverError() handler
-		return
-	}
+
+	// // Template path slice. Base template must be first in the slice.
+	// files := []string{
+	// 	"./ui/html/base.tmpl.html",
+	// 	"./ui/html/partials/nav.tmpl.html",
+	// 	"./ui/html/pages/home.tmpl.html",
+	// }
+
+	// // Read template file into a template set.
+	// // If error is present, log error msg and return a generic 500
+	// // Path either needs to be an absolute path or relative to your current working diretory
+	// // Passing in template file path slice as variadic parameter
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	app.serverError(w, err) // Use the serverError() handler
+	// 	return
+	// }
+	// // Write the specified template in the set into response body
+	// err = ts.ExecuteTemplate(w, "base", nil)
+	// if err != nil {
+	// 	app.serverError(w, err) // Use the serverError() handler
+	// 	return
+	// }
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
