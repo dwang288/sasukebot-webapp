@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/dwang288/snippetbox/internal/models"
+
 	// Adding this so 1) go mod tidy doesn't remove the package and
 	// 2) the init() function of the package runs and registers itself with the
 	// database/sql package. This is standard procedure with most the go sql drivers.
@@ -16,6 +18,8 @@ import (
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	// inject our model (db) into our application struct
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -45,9 +49,11 @@ func main() {
 	defer db.Close()
 
 	// Initialize new application struct with dependencies
+	// Inject initialized DB to struct as well
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// Specify and initialize a http.Server so we can use our custom errorLog.
