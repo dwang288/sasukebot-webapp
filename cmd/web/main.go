@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,8 @@ type application struct {
 	infoLog  *log.Logger
 	// inject our model (db) into our application struct
 	snippets *models.SnippetModel
+	// add a template cache for parsed templates so we don't have to keep reparsing
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -48,12 +51,18 @@ func main() {
 	}
 	defer db.Close()
 
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	// Initialize new application struct with dependencies
-	// Inject initialized DB to struct as well
+	// Inject initialized DB and template cache
 	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		snippets: &models.SnippetModel{DB: db},
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		snippets:      &models.SnippetModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	// Specify and initialize a http.Server so we can use our custom errorLog.

@@ -26,3 +26,25 @@ func (app *application) clientError(w http.ResponseWriter, status int) {
 func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
+
+// Deal with duplicated template rending code in the handlers
+func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
+
+	// Get template set from cache, if it doesn't exist then throw a 500
+	ts, ok := app.templateCache[page]
+	if !ok {
+		err := fmt.Errorf("the template %s does not exist", page)
+		app.serverError(w, err)
+		return
+	}
+
+	// Respond with correct header (200/500/404 etc)
+	w.WriteHeader(status)
+
+	// Execute the template set into the response
+	err := ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+}
