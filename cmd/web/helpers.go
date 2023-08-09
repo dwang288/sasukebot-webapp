@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -38,13 +39,23 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 		return
 	}
 
+	// Initialize new buffer to test runtime errors against
+	buf := new(bytes.Buffer)
+
+	// Execute template into a buffer first to check for any errors.
+	// If it errors out then throw a 500 and return early.
+	// We can't error out on the real template response because we'll have sent half
+	// of the template already before we hit the runtime error and throw the 500
+	err := ts.ExecuteTemplate(buf, "base", data)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	// Respond with correct header (200/500/404 etc)
 	w.WriteHeader(status)
 
-	// Execute the template set into the response
-	err := ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// Write to the response writer directly from the checked buffer
+	buf.WriteTo(w)
 
 }
