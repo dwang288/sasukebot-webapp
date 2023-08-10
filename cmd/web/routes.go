@@ -20,8 +20,10 @@ func (app *application) routes() http.Handler {
 	// Strip /static prefix from URL path before processing request
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
+	// Wrap request logging middleware with panic recovery middleware so the
+	// client gets a proper Connection Closed and a 500 on a panic
 	// Wrap security headers middleware with request logging function
 	// Wrap servemux with middleware that adds security header
 	// Pass the servemux in as the next handler to be called
-	return app.logRequest(secureHeaders(mux))
+	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
 }
