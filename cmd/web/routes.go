@@ -2,8 +2,8 @@ package main
 
 import "net/http"
 
-// Move routing logic into its own file/function
-func (app *application) routes() *http.ServeMux {
+// Return http.Handler type instead of *http.ServeMux so we can chain handlers
+func (app *application) routes() http.Handler {
 	// Use the http.NewServeMux() function to initialize a new servemux
 	// Register the home function as the handler for the "/" URL pattern
 	mux := http.NewServeMux()
@@ -20,5 +20,7 @@ func (app *application) routes() *http.ServeMux {
 	// Strip /static prefix from URL path before processing request
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	return mux
+	// Wrap servemux with middleware that adds security header
+	// Pass the servemux in as the next handler to be called
+	return secureHeaders(mux)
 }
