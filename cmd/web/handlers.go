@@ -25,10 +25,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create a new templateData struct and add snippets to the struct
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+
 	// Replace duplicated rendering logic. Still passing in hardcoded name
-	app.render(w, http.StatusOK, "home.tmpl.html", &templateData{
-		Snippets: snippets,
-	})
+	app.render(w, http.StatusOK, "home.tmpl.html", data)
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -53,10 +55,12 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create a new templateData struct and add the snippet to the struct
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+
 	// Use the render helper. Still passing in hardcoded page name
-	app.render(w, http.StatusOK, "view.tmpl.html", &templateData{
-		Snippet: snippet,
-	})
+	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {

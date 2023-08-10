@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 // On error, logs the error trace and writes the status text for internal server error
@@ -58,4 +59,9 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 	// Write to the response writer directly from the checked buffer
 	buf.WriteTo(w)
 
+}
+
+// Used to initialize template data structs, always want to include the year for the footer
+func (app *application) newTemplateData(r *http.Request) *templateData {
+	return &templateData{CurrentYear: time.Now().Year()}
 }

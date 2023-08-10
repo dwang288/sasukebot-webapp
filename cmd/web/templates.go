@@ -12,8 +12,9 @@ import (
 // Not every field needs to be filled upon instantiation,
 // OK to leave them as nil if they're not being used in the template
 type templateData struct {
-	Snippet  *models.Snippet
-	Snippets []*models.Snippet
+	CurrentYear int
+	Snippet     *models.Snippet
+	Snippets    []*models.Snippet
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
