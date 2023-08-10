@@ -3,9 +3,16 @@ package main
 import (
 	"html/template"
 	"path/filepath"
+	"time"
 
 	"github.com/dwang288/snippetbox/internal/models"
 )
+
+// Global var to hold the functions we want to pass into our templates
+// String to function lookup of our functions
+var functions = template.FuncMap{
+	"humanDate": humanDate,
+}
 
 // Define a templateData type to act as the holding structure for
 // any dynamic data that we want to pass to our HTML templates.
@@ -35,8 +42,10 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// Get filename from full filepath
 		name := filepath.Base(page)
 
-		// Parse base file into a template set
-		ts, err := template.ParseFiles("./ui/html/base.tmpl.html")
+		// Create a new template set so we can chain .Funcs immediately afterwards
+		// .Funcs registers the functions in the FuncMap to the template set
+		// Needs to be called first in the chain
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl.html")
 		if err != nil {
 			return nil, err
 		}
@@ -59,4 +68,9 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	return cache, nil
+}
+
+// Formats t as a human readable time string
+func humanDate(t time.Time) string {
+	return t.Format("02 Jan 2006 at 15:04")
 }
