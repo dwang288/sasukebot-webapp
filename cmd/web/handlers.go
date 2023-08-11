@@ -8,15 +8,13 @@ import (
 	"strconv"
 
 	"github.com/dwang288/snippetbox/internal/models"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// Undefined paths no longer get routed to /
-	if r.URL.Path != "/" {
-		// Use the notFound() helper
-		app.notFound(w)
-		return
-	}
+
+	// Remove exact base URL check for "/" since httprouter does exact matches
 
 	// Grab latest 10 snippets
 	snippets, err := app.snippets.Latest()
@@ -34,8 +32,11 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	// Extract the id parameter from the query and turn the string into and int
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	// Grab named parameters from request with ParamsFromContext(r.Context())
+	params := httprouter.ParamsFromContext(r.Context())
+
+	// Extract the id parameter from the slice and turn the string into an int
+	id, err := strconv.Atoi(params.ByName("id"))
 
 	// If it cannot be converted or is out of the expected range then return 404
 	if err != nil || id < 1 {
@@ -63,17 +64,13 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 
+// Placeholder function
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	// Use r.Method to check whether the request is using POST or not
-	if r.Method != http.MethodPost {
-		// Send 405 response if it isn't a POST
-		// Also let client know which REST methods are allowed by adding a header to
-		// the response header map
-		w.Header().Set("Allow", http.MethodPost)
-		// Return the correct error code and message
-		app.clientError(w, http.StatusMethodNotAllowed) // use the clientError() helper
-		return
-	}
+	w.Write([]byte("Display the form for creating a new snippet..."))
+}
+
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+	// Removing check for post
 
 	// Example dummy data
 	title := "O snail"
@@ -88,5 +85,6 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect user to the new snippet's view page
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	// Use clean URL format
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }

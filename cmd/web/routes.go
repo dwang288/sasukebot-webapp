@@ -1,29 +1,27 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/julienschmidt/httprouter"
+)
 
 // Return http.Handler type instead of *http.ServeMux so we can chain handlers
 func (app *application) routes() http.Handler {
-	// Use the http.NewServeMux() function to initialize a new servemux
-	// Register the home function as the handler for the "/" URL pattern
-	mux := http.NewServeMux()
+	// Initialize the httprouter
+	router := httprouter.New()
 
 	// Create a file server for serving static files out of a directory
 	// Path given is relative to the project directory root
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+	// Replace all http.Servemuxes with httprouter, use clean URL pathing
+	router.HandlerFunc(http.MethodGet, "/", app.home)
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
 
-	// Register FileServer as the handler for URL paths that start with /static/
-	// Strip /static prefix from URL path before processing request
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
-	// Wrap request logging middleware with panic recovery middleware so the
-	// client gets a proper Connection Closed and a 500 on a panic
-	// Wrap security headers middleware with request logging function
-	// Wrap servemux with middleware that adds security header
-	// Pass the servemux in as the next handler to be called
-	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	return app.recoverPanic(app.logRequest(secureHeaders(router)))
 }
