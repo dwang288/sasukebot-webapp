@@ -11,6 +11,11 @@ func (app *application) routes() http.Handler {
 	// Initialize the httprouter
 	router := httprouter.New()
 
+	// Set httprouter's default notFound handler to our not found function
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
+
 	// Create a file server for serving static files out of a directory
 	// Path given is relative to the project directory root
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
