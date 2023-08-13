@@ -69,7 +69,21 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
+	// Initialize data.Form along with any default form values
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
 	app.render(w, http.StatusOK, "create.tmpl.html", data)
+}
+
+// Struct for holding form data
+// Fields are exported on purposes because html/template needs them to be
+// exported to be read
+type snippetCreateForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors map[string]string
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -84,43 +98,49 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Grab body data
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
+	// Get expires as variable first because we need to error check
 	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	// Map for holding form validation errors
-	fieldErrors := make(map[string]string)
+	// Initialize new form struct
+	form := snippetCreateForm{
+		Title:       r.PostForm.Get("title"),
+		Content:     r.PostForm.Get("content"),
+		Expires:     expires,
+		FieldErrors: map[string]string{},
+	}
 
 	// Check title value is not more than 100 character long or blank
 	// Use RuneCountInString() function to count characters instead of len() to
 	// count bytes. Characters with umlauts for example are unicode characters
 	// that take 2 bytes instead of 1.
-	if utf8.RuneCountInString(title) > 100 {
-		fieldErrors["title"] = "This field cannot be more than 100 characters long"
+	if utf8.RuneCountInString(form.Title) > 100 {
+		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
 	}
-	if strings.TrimSpace(title) == "" {
-		fieldErrors["title"] = "This field cannot be blank"
+	if strings.TrimSpace(form.Title) == "" {
+		form.FieldErrors["title"] = "This field cannot be blank"
 	}
-
+	if strings.TrimSpace(form.Content) == "" {
+		form.FieldErrors["content"] = "This field cannot be blank"
+	}
 	// Check expires value is a valid option
 	if expires != 1 && expires != 7 && expires != 365 {
-		fieldErrors["expires"] = "This field must equal 1, 7, or 365"
+		form.FieldErrors["expires"] = "This field must equal 1, 7, or 365"
 	}
 
-	// If there are field errors, return map in a plain text HTTP response and
-	// return early
-	if len(fieldErrors) > 0 {
-		fmt.Fprint(w, fieldErrors)
+	// If there's form errors, refill form data + reload and send a 422
+	if len(form.FieldErrors) > 0 {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.tmpl.html", data)
 		return
 	}
 
 	// Pass data to Insert method and receive ID of the inserted method back
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.serverError(w, err)
 		return
