@@ -3,13 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strings"
-	"unicode/utf8"
 
 	"net/http"
 	"strconv"
 
 	"github.com/dwang288/snippetbox/internal/models"
+	"github.com/dwang288/snippetbox/internal/validator"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -80,10 +79,14 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 // Fields are exported on purposes because html/template needs them to be
 // exported to be read
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string
+	Content string
+	Expires int
+	// Embeds the validator so that snippetCreateForm can use all the fields
+	// and methods of the Validator type
+	// Validator type contains the FieldsError field so we can access it the same way
+	// as we did before
+	validator.Validator
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -107,32 +110,20 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	// Initialize new form struct
 	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
 	}
 
-	// Check title value is not more than 100 character long or blank
-	// Use RuneCountInString() function to count characters instead of len() to
-	// count bytes. Characters with umlauts for example are unicode characters
-	// that take 2 bytes instead of 1.
-	if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	}
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-	// Check expires value is a valid option
-	if expires != 1 && expires != 7 && expires != 365 {
-		form.FieldErrors["expires"] = "This field must equal 1, 7, or 365"
-	}
+	// If the check is false, then will add the error info the the form errors
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7, or 365")
 
+	// Instead of only checking the length, use our Valid method to see if the form is valid
 	// If there's form errors, refill form data + reload and send a 422
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "create.tmpl.html", data)
