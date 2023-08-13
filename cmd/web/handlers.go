@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"unicode/utf8"
 
 	"net/http"
 	"strconv"
@@ -67,7 +69,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	app.render(w, http.StatusOK, "create.tmpl", data)
+	app.render(w, http.StatusOK, "create.tmpl.html", data)
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +90,32 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Map for holding form validation errors
+	fieldErrors := make(map[string]string)
+
+	// Check title value is not more than 100 character long or blank
+	// Use RuneCountInString() function to count characters instead of len() to
+	// count bytes. Characters with umlauts for example are unicode characters
+	// that take 2 bytes instead of 1.
+	if utf8.RuneCountInString(title) > 100 {
+		fieldErrors["title"] = "This field cannot be more than 100 characters long"
+	}
+	if strings.TrimSpace(title) == "" {
+		fieldErrors["title"] = "This field cannot be blank"
+	}
+
+	// Check expires value is a valid option
+	if expires != 1 && expires != 7 && expires != 365 {
+		fieldErrors["expires"] = "This field must equal 1, 7, or 365"
+	}
+
+	// If there are field errors, return map in a plain text HTTP response and
+	// return early
+	if len(fieldErrors) > 0 {
+		fmt.Fprint(w, fieldErrors)
 		return
 	}
 
