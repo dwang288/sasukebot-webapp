@@ -23,7 +23,8 @@ type templateData struct {
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
 	// Form for any default form data
-	Form any
+	Form  any
+	Flash string
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
