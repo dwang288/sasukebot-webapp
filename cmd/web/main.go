@@ -7,10 +7,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/dwang288/snippetbox/internal/models"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
+
 	// Adding this so 1) go mod tidy doesn't remove the package and
 	// 2) the init() function of the package runs and registers itself with the
 	// database/sql package. This is standard procedure with most the go sql drivers.
@@ -25,7 +29,8 @@ type application struct {
 	// add a template cache for parsed templates so we don't have to keep reparsing
 	templateCache map[string]*template.Template
 	// add formDecoder for automatically pulling out post body data
-	formDecoder *form.Decoder
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -61,14 +66,21 @@ func main() {
 
 	formDecoder := form.NewDecoder()
 
+	// Initialize a new sessionManager, set it to use our DB as the backing store
+	// Set session TTL to 12 hours
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	// Initialize new application struct with dependencies
 	// Inject initialized DB, template cache, and form decoder
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// Specify and initialize a http.Server so we can use our custom errorLog.
