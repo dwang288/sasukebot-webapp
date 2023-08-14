@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/go-playground/form/v4"
 )
 
 // On error, logs the error trace and writes the status text for internal server error
@@ -64,4 +67,25 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 // Used to initialize template data structs, always want to include the year for the footer
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{CurrentYear: time.Now().Year()}
+}
+
+// Decode request body into target dst
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	// Parse post form body regularly
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	// Use the form decoder
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		// Panic if we pass in an invalid target destination
+		var invalidDecoderError *form.InvalidDecoderError
+		if errors.As(err, &invalidDecoderError) {
+			panic(err)
+		}
+		return err
+	}
+	return nil
 }

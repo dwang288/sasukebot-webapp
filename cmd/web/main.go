@@ -10,6 +10,7 @@ import (
 
 	"github.com/dwang288/snippetbox/internal/models"
 
+	"github.com/go-playground/form/v4"
 	// Adding this so 1) go mod tidy doesn't remove the package and
 	// 2) the init() function of the package runs and registers itself with the
 	// database/sql package. This is standard procedure with most the go sql drivers.
@@ -23,6 +24,8 @@ type application struct {
 	snippets *models.SnippetModel
 	// add a template cache for parsed templates so we don't have to keep reparsing
 	templateCache map[string]*template.Template
+	// add formDecoder for automatically pulling out post body data
+	formDecoder *form.Decoder
 }
 
 func main() {
@@ -56,13 +59,16 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
 	// Initialize new application struct with dependencies
-	// Inject initialized DB and template cache
+	// Inject initialized DB, template cache, and form decoder
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	// Specify and initialize a http.Server so we can use our custom errorLog.

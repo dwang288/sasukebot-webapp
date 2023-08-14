@@ -78,20 +78,20 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 // Struct for holding form data
 // Fields are exported on purposes because html/template needs them to be
 // exported to be read
+// Struct tags for mapping HTML form values to struct fields
+// `form:"-"` tells decoder to ignore that field
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
+	Title   string `form:"title"`
+	Content string `form:"content"`
+	Expires int    `form:"expires"`
 	// Embeds the validator so that snippetCreateForm can use all the fields
 	// and methods of the Validator type
 	// Validator type contains the FieldsError field so we can access it the same way
 	// as we did before
-	validator.Validator
+	validator.Validator `form:"-"`
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	// Removing check for post
-
 	// Adds data in POST request bodies to the r.PostForm map
 	// Function also works for PUT and PATCH
 	err := r.ParseForm()
@@ -101,18 +101,12 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Get expires as variable first because we need to error check
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// Create form struct and decode parsed content into the struct
+	var form snippetCreateForm
+	err = app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	// Initialize new form struct
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
 	}
 
 	// If the check is false, then will add the error info the the form errors
