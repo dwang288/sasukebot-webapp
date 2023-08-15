@@ -57,15 +57,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Pops off the key value pair for the flash key, if no matching key then value
-	// will be empty
-	flash := app.sessionManager.PopString(r.Context(), "flash")
-
 	// Create a new templateData struct and add the snippet to the struct
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
-	// Set flash msg
-	data.Flash = flash
 
 	// Use the render helper. Still passing in hardcoded page name
 	app.render(w, http.StatusOK, "view.tmpl.html", data)

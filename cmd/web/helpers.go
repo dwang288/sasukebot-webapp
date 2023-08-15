@@ -66,7 +66,10 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 
 // Used to initialize template data structs, always want to include the year for the footer
 func (app *application) newTemplateData(r *http.Request) *templateData {
-	return &templateData{CurrentYear: time.Now().Year()}
+	return &templateData{
+		CurrentYear: time.Now().Year(),
+		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
+	}
 }
 
 // Decode request body into target dst

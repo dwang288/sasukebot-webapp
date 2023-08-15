@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -72,6 +73,10 @@ func main() {
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 
+	// Set Secure attribute on session cookies to indicate that this session cookie
+	// should only be sent by a user's browser when a HTTPS connection is being used
+	sessionManager.Cookie.Secure = true
+
 	// Initialize new application struct with dependencies
 	// Inject initialized DB, template cache, and form decoder
 	app := &application{
@@ -83,17 +88,23 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
+	// Set TLS settings to select the non default elliptic curve we want to use
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	// Specify and initialize a http.Server so we can use our custom errorLog.
 	// Otherwise we could just use the http.ListenAndServe shortcut function.
 	srv := &http.Server{
-		Addr:     *addr,
-		ErrorLog: errorLog,
-		Handler:  app.routes(),
+		Addr:      *addr,
+		ErrorLog:  errorLog,
+		Handler:   app.routes(),
+		TLSConfig: tlsConfig,
 	}
-	// Use the ListenAndServe() function on our custom http.Server
-	// to start a new web server.
+	// Use the ListenAndServeTLS() function on our custom http.Server
+	// to start a new web server over HTTPS
 	infoLog.Printf("Starting server on %s", *addr)
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }
 
