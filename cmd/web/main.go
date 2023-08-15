@@ -27,6 +27,8 @@ type application struct {
 	infoLog  *log.Logger
 	// inject our model (db) into our application struct
 	snippets *models.SnippetModel
+	// inject our users model (db) into our application struct
+	users *models.UserModel
 	// add a template cache for parsed templates so we don't have to keep reparsing
 	templateCache map[string]*template.Template
 	// add formDecoder for automatically pulling out post body data
@@ -78,11 +80,13 @@ func main() {
 	sessionManager.Cookie.Secure = true
 
 	// Initialize new application struct with dependencies
-	// Inject initialized DB, template cache, and form decoder
+	// Inject initialized snippets DB pool, initialized users DB pool,
+	// template cache, and form decoder
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
