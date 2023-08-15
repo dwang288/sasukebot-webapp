@@ -100,6 +100,11 @@ func main() {
 		ErrorLog:  errorLog,
 		Handler:   app.routes(),
 		TLSConfig: tlsConfig,
+		// Add timeouts to connections
+		// Protects agains slow client attacks, dropped connections clientside, etc
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	// Use the ListenAndServeTLS() function on our custom http.Server
 	// to start a new web server over HTTPS
