@@ -65,18 +65,8 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 
-func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-
-	// Initialize data.Form along with any default form values
-	data.Form = snippetCreateForm{
-		Expires: 365,
-	}
-	app.render(w, http.StatusOK, "create.tmpl.html", data)
-}
-
 // Struct for holding form data
-// Fields are exported on purposes because html/template needs them to be
+// Fields are exported on purpose because html/template needs them to be
 // exported to be read
 // Struct tags for mapping HTML form values to struct fields
 // `form:"-"` tells decoder to ignore that field
@@ -89,6 +79,16 @@ type snippetCreateForm struct {
 	// Validator type contains the FieldsError field so we can access it the same way
 	// as we did before
 	validator.Validator `form:"-"`
+}
+
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	// Initialize data.Form along with any default form values
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
+	app.render(w, http.StatusOK, "create.tmpl.html", data)
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -138,8 +138,19 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 
+// Struct for holding form data in template
+type userSignupForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Display a HTML form for signing up a new user...")
+	data := app.newTemplateData(r)
+	// Initialize with blank default values
+	data.Form = userSignupForm{}
+	app.render(w, http.StatusOK, "signup.tmpl.html", data)
 }
 
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
