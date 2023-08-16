@@ -32,7 +32,7 @@ func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
-// Deal with duplicated template rending code in the handlers
+// Deal with duplicated template rendering code in the handlers
 func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
 
 	// Get template set from cache, if it doesn't exist then throw a 500
