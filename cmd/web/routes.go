@@ -22,17 +22,21 @@ func (app *application) routes() http.Handler {
 
 	// Replace all http.Servemuxes with httprouter, use clean URL pathing
 	// Wrap handlers that use session data with session middleware
-	router.Handler(http.MethodGet, "/", app.sessionManager.LoadAndSave(http.HandlerFunc(app.home)))
-	router.Handler(http.MethodGet, "/snippet/view/:id", app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetView)))
-	router.Handler(http.MethodGet, "/snippet/create", app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetCreate)))
-	router.Handler(http.MethodPost, "/snippet/create", app.sessionManager.LoadAndSave(http.HandlerFunc(app.snippetCreatePost)))
+	router.Handler(http.MethodGet, "/", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.home))))
+	router.Handler(http.MethodGet, "/snippet/view/:id", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.snippetView))))
+
+	// Requires users to be logged in
+	router.Handler(http.MethodGet, "/snippet/create", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.snippetCreate)))))
+	router.Handler(http.MethodPost, "/snippet/create", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.snippetCreatePost)))))
 
 	// User authentication routes
-	router.Handler(http.MethodGet, "/user/signup", app.sessionManager.LoadAndSave(http.HandlerFunc(app.userSignup)))
-	router.Handler(http.MethodPost, "/user/signup", app.sessionManager.LoadAndSave(http.HandlerFunc(app.userSignupPost)))
-	router.Handler(http.MethodGet, "/user/login", app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLogin)))
-	router.Handler(http.MethodPost, "/user/login", app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLoginPost)))
-	router.Handler(http.MethodPost, "/user/logout", app.sessionManager.LoadAndSave(http.HandlerFunc(app.userLogoutPost)))
+	router.Handler(http.MethodGet, "/user/signup", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userSignup))))
+	router.Handler(http.MethodPost, "/user/signup", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userSignupPost))))
+	router.Handler(http.MethodGet, "/user/login", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userLogin))))
+	router.Handler(http.MethodPost, "/user/login", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.userLoginPost))))
+
+	// Requires users to be logged in
+	router.Handler(http.MethodPost, "/user/logout", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.userLogoutPost)))))
 
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
