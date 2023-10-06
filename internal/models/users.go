@@ -25,6 +25,25 @@ type UserModel struct {
 	DB *sql.DB
 }
 
+func (m *UserModel) Get(id int) (*User, error) {
+	u := &User{}
+
+	statement := `SELECT id, name, email, created
+	FROM users
+	WHERE id = ?`
+
+	err := m.DB.QueryRow(statement, id).Scan(&u.ID, &u.Name, &u.Email, &u.Created)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return u, nil
+}
+
 // Insert creates a new record in the Users table.
 func (m *UserModel) Insert(name, email, password string) error {
 	// Generate a bcrypt hashed password

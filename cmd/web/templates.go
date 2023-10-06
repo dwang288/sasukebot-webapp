@@ -22,6 +22,7 @@ type templateData struct {
 	CurrentYear int
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
+	User        *models.User
 	// Form for any default form data
 	Form            any
 	Flash           string

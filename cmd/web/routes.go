@@ -26,6 +26,7 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/snippet/view/:id", app.sessionManager.LoadAndSave(app.authenticate(http.HandlerFunc(app.snippetView))))
 
 	// Requires users to be logged in
+	router.Handler(http.MethodGet, "/account/view", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.accountView)))))
 	router.Handler(http.MethodGet, "/snippet/create", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.snippetCreate)))))
 	router.Handler(http.MethodPost, "/snippet/create", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.snippetCreatePost)))))
 
