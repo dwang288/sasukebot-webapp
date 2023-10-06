@@ -281,7 +281,14 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
-	// Redirect the user to the create snippet page
+	// If user was attempting to access a protected page and was redirected, then
+	// redirect to that page. Otherwise redirect the user to the create snippet page
+	// PopString removes the key and returns the value in one step
+	redirectionURL := app.sessionManager.PopString(r.Context(), "redirectPathAfterLogin")
+	if redirectionURL != "" {
+		http.Redirect(w, r, redirectionURL, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
