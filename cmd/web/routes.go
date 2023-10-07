@@ -39,6 +39,10 @@ func (app *application) routes() http.Handler {
 	// Requires users to be logged in
 	router.Handler(http.MethodPost, "/user/logout", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.userLogoutPost)))))
 
+	// Change password routes
+	router.Handler(http.MethodGet, "/account/password/update", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.accountPasswordUpdate)))))
+	router.Handler(http.MethodPost, "/account/password/update", app.sessionManager.LoadAndSave(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.accountPasswordUpdatePost)))))
+
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
 	return app.recoverPanic(app.logRequest(secureHeaders(router)))

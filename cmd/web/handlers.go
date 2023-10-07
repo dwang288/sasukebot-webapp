@@ -310,3 +310,44 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	// Redirect the user to the application homepage
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+type accountPasswordUpdateForm struct {
+	CurrentPassword         string `form:"currentPassword"`
+	NewPassword             string `form:"newPassword"`
+	NewPasswordConfirmation string `form:"newPasswordConfirmation"`
+	validator.Validator     `form:"-"`
+}
+
+func (app *application) accountPasswordUpdate(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Form = accountPasswordUpdateForm{}
+	app.render(w, http.StatusOK, "password.tmpl.html", data)
+}
+
+func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http.Request) {
+	var form accountPasswordUpdateForm
+	// Decode postform body into struct
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	form.CheckField(validator.NotBlank(form.CurrentPassword), "currentPassword", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.CurrentPassword, 8), "currentPassword", "This field must be at least 8 characters long")
+	form.CheckField(validator.NotBlank(form.NewPassword), "newPassword", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.NewPassword, 8), "newPassword", "This field must be at least 8 characters long")
+	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.NewPasswordConfirmation, 8), "newPasswordConfirmation", "This field must be at least 8 characters long")
+
+	// If form is invalid, reload signup form with defaults
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		form.CurrentPassword = ""
+		form.NewPassword = ""
+		form.NewPasswordConfirmation = ""
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "password.tmpl.html", data)
+		return
+	}
+	fmt.Fprintf(w, "Update password form post")
+}
