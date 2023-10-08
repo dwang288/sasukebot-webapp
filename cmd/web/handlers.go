@@ -333,18 +333,16 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 		return
 	}
 	form.CheckField(validator.NotBlank(form.CurrentPassword), "currentPassword", "This field cannot be blank")
-	form.CheckField(validator.MinChars(form.CurrentPassword, 8), "currentPassword", "This field must be at least 8 characters long")
 	form.CheckField(validator.NotBlank(form.NewPassword), "newPassword", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.NewPassword, 8), "newPassword", "This field must be at least 8 characters long")
 	form.CheckField(validator.NotBlank(form.NewPasswordConfirmation), "newPasswordConfirmation", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.NewPasswordConfirmation, 8), "newPasswordConfirmation", "This field must be at least 8 characters long")
+	form.CheckField(validator.MatchesString(form.NewPassword, form.NewPasswordConfirmation), "newPasswordConfirmation", "Passwords must match")
 
 	// If form is invalid, reload signup form with defaults
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.CurrentPassword = ""
-		form.NewPassword = ""
-		form.NewPasswordConfirmation = ""
+		// Despite reloading the form data, it will not auto populate because the fields are password fields
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "password.tmpl.html", data)
 		return
