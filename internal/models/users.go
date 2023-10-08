@@ -115,3 +115,56 @@ func (m *UserModel) Exists(id int) (bool, error) {
 	err := m.DB.QueryRow(stmt, id).Scan(&exists)
 	return exists, err
 }
+
+func (m *UserModel) PasswordUpdate(id int, currentPassword, newPassword string) error {
+	hashedPassword, err := m.GetHashedPassword(id)
+	if err != nil {
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(currentPassword))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return ErrInvalidCredentials
+		} else {
+			return err
+		}
+	}
+
+	err = m.UpdateHashedPassword(id, newPassword)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *UserModel) GetHashedPassword(id int) ([]byte, error) {
+	var hashedPassword []byte
+
+	statement := `SELECT hashed_password
+	FROM users
+	WHERE id = ?`
+
+	err := m.DB.QueryRow(statement, id).Scan(&hashedPassword)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return hashedPassword, nil
+}
+
+func (m *UserModel) UpdateHashedPassword(id int, password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return err
+	}
+
+	statement := "UPDATE users SET hashed_password = ? WHERE id = ?"
+	_, err = m.DB.Exec(statement, string(hashedPassword), id)
+	return err
+}

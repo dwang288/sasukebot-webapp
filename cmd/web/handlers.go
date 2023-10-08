@@ -347,5 +347,14 @@ func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http
 		app.render(w, http.StatusUnprocessableEntity, "password.tmpl.html", data)
 		return
 	}
-	fmt.Fprintf(w, "Update password form post")
+
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	err = app.users.PasswordUpdate(id, form.CurrentPassword, form.NewPassword)
+	if errors.Is(err, models.ErrInvalidCredentials) {
+		app.sessionManager.Put(r.Context(), "flash", "Incorrect password.")
+	}
+	app.sessionManager.Put(r.Context(), "flash", "Your password has been changed successfully!")
+
+	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
 }
